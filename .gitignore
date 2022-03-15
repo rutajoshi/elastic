@@ -1,0 +1,8 @@
+bin/
+build/
+dump.rdb
+force_outputs.txt
+model/
+moment_outputs.txt
+path2d/CMakeFiles/
+path2d/joint_autonomous/CMakeFiles/
