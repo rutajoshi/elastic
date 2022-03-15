@@ -4,7 +4,7 @@
 
     <robot name="mmp_panda">
         <model dir="./resources" path="joint_robot.urdf" name="mmp_panda" />
-        <origin xyz="1 1 0" rpy="0 0 0" />
+        <origin xyz="1.0 1.0 0" rpy="0 0 0" />
     </robot>
 
     <!-- <static_object name="building">
@@ -24,13 +24,13 @@
     </static_object> -->
 
     <static_object name="Floor">
-        <origin xyz="0.0 0.0 -0.05" rpy="0 0 0" />
-        <collision>
+        <origin xyz="7.0 7.0 -0.05" rpy="0 0 0" />
+        <!-- <collision>
             <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
             <geometry>
                 <box size="14.0 14.0 0.1" />
             </geometry>
-        </collision>
+        </collision> -->
         <visual>
             <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
             <geometry>
@@ -107,9 +107,9 @@
     </light> -->
 
     <camera name="camera_fixed">
-        <position xyz="7.0 7.0 10.0" />
+        <position xyz="7.0 7.0 5.0" />
         <vertical xyz="0.0 0.0 10.0" />
-        <lookat xyz="7.0 7.0 10.0" />
+        <lookat xyz="7.01 7.01 0.0" />
     </camera>
 
 </world>

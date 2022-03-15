@@ -29,9 +29,9 @@ const string robot_file = "./resources/joint_robot.urdf";
 #define INITIAL_POS				1 // Starting position
 #define MOVING 						2	// Moving with nozzle up (joint space)
 #define POSITION_HOLD			3	// Pause for 100 controller loop cycles
-#define NOZZLE_DOWN				4	// Move nozzle down until force felt exceeds threshold (task space)
-#define POURING_RIGHT			5	// Track the groove and move right w/nozzle down until force felt changes (task space?) -- or just move to next spot
-#define NOZZLE_UP					6	// Move nozzle up back to initial position
+// #define NOZZLE_DOWN				4	// Move nozzle down until force felt exceeds threshold (task space)
+// #define POURING_RIGHT			5	// Track the groove and move right w/nozzle down until force felt changes (task space?) -- or just move to next spot
+// #define NOZZLE_UP					6	// Move nozzle up back to initial position
 
 int state = INITIAL_POS;
 
@@ -183,17 +183,18 @@ int main() {
 	auto joint_task = new Sai2Primitives::JointTask(robot);
 
 	#ifdef USING_OTG
-		joint_task->_use_interpolation_flag = true;
+		joint_task->_use_interpolation_flag = false;
 	#else
 		joint_task->_use_velocity_saturation_flag = true;
 	#endif
-    joint_task->_saturation_velocity << M_PI/12, M_PI/12, M_PI/12; //M_PI/6, M_PI/6, M_PI/6; // set new slower velocity (to help visualize)
+  	joint_task->_saturation_velocity << M_PI/12, M_PI/12, M_PI/12; //M_PI/6, M_PI/6, M_PI/6; // set new slower velocity (to help visualize)
 
 
 	// controller gains
 	VectorXd joint_task_torques = VectorXd::Zero(dof);
 	joint_task->_kp = 250.0;
 	joint_task->_kv = 15.0;
+	joint_task->setDynamicDecouplingFull();
 
 	// controller desired angles
 	VectorXd q_des = VectorXd::Zero(dof);
@@ -271,7 +272,7 @@ int main() {
 		// }
 
 		if (state == INITIAL_POS) {
-			joint_task->reInitializeTask();
+			// joint_task->reInitializeTask();
 			// q_des << pos1a;
 			VectorXd newPos = positions.row(pc);
 			q_des << newPos;
@@ -284,7 +285,7 @@ int main() {
 			// cout << "Made it to moving state\n";
 			if((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
 				// cout << "Made it to pos1a\n";
-				joint_task->reInitializeTask();
+				// joint_task->reInitializeTask();
 				pc++;
 				state = POSITION_HOLD;
 
@@ -331,22 +332,22 @@ int main() {
 
 		else if (state == POSITION_HOLD) {
 			// cout << "Made it to position hold\n";
-			if (pc < 14) {
-				joint_task->reInitializeTask();
+			if (pc < num_pos) {
+				// joint_task->reInitializeTask();
 				VectorXd newPos = positions.row(pc);
 				q_des << newPos;
 				// Maintain nozzle position when moving again
-				if (nozzle_pos == 1) {
-					q_des(3) = -0.02;
-				} else {
-					q_des(3) = 0.0;
-				}
+				// if (nozzle_pos == 1) {
+				// 	q_des(3) = -0.02;
+				// } else {
+				// 	q_des(3) = 0.0;
+				// }
 				cout << "qdes = " << q_des << "\n";
 				state = MOVING;
 			}
 		}
 
-		if (state == MOVING || state == NOZZLE_DOWN || state == NOZZLE_UP) {
+		if (state == MOVING) { // || state == NOZZLE_DOWN || state == NOZZLE_UP) {
 			/* Primary Joint Task Control */
 			/* Invoked when we want the base to move and the nozzle to maintain position. */
 			/* RUTA: consider making POURING task posori instead of joint for better accuracy. */
@@ -361,19 +362,19 @@ int main() {
 
 			command_torques = joint_task_torques;
 		}
-		// else if (state == POSITION_HOLD) {
-		// 	// Maintain all joint angles at the current position
-		// 	joint_task->_desired_position = robot->_q;
-		//
-		// 	// update task model and set hierarchy
-		// 	N_prec.setIdentity();
-		// 	joint_task->updateTaskModel(N_prec);
-		//
-		// 	// compute torques
-		// 	joint_task->computeTorques(joint_task_torques);
-		//
-		// 	command_torques = joint_task_torques;
-		// }
+		else if (state == POSITION_HOLD) {
+			// Maintain all joint angles at the current position
+			joint_task->_desired_position = robot->_q;
+
+			// update task model and set hierarchy
+			N_prec.setIdentity();
+			joint_task->updateTaskModel(N_prec);
+
+			// compute torques
+			joint_task->computeTorques(joint_task_torques);
+
+			command_torques = joint_task_torques;
+		}
 		// else if (state == NOZZLE_DOWN || state == NOZZLE_UP) {
 		// 	/* Primary POSORI Control */
 		// 	cout << "posori control\n";

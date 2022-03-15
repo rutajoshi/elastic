@@ -97,6 +97,8 @@ int main() {
 	// load graphics scene
 	auto graphics = new Sai2Graphics::Sai2Graphics(world_file, true);
 	Eigen::Vector3d camera_pos, camera_lookat, camera_vertical;
+	graphics->getCamera(camera_name)->setClippingPlanes(0.1, 50);
+	graphics->_world->setBackgroundColor(66.0/225, 135.0/255, 245.0/255);
 	graphics->getCameraPose(camera_name, camera_pos, camera_vertical, camera_lookat);
 
 	// load robots

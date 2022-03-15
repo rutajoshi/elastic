@@ -93,7 +93,7 @@
         </material>
     </visual>
 
-    <collision>
+    <!-- <collision>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
       <geometry>
         <cylinder radius="0.01" length="0.1" />
@@ -110,7 +110,7 @@
         <material name="material_blue">
           <color rgba="0 0 1 1"/>
         </material>
-    </collision>
+    </collision> -->
   </link>
 
   <!-- JOINTS -->
@@ -159,7 +159,7 @@
     <limit effort="87" lower="0" upper="2.0" velocity="0.2" />
   </joint> -->
 
-  <joint name = "jointTool" type = "prismatic">
+  <joint name = "jointTool" type = "fixed">
     <origin xyz = "0 0 0.01" rpy = "0 0 1.57"/>
     <parent link = "base_fix" />
     <child link= "linkTool"/>
