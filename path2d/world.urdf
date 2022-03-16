@@ -4,7 +4,7 @@
 
     <robot name="mmp_panda">
         <model dir="./resources" path="joint_robot.urdf" name="mmp_panda" />
-        <origin xyz="1.0 1.0 0" rpy="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
     </robot>
 
     <!-- <static_object name="building">

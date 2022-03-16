@@ -93,8 +93,8 @@ int main() {
 	// load robots
 	auto robot = new Sai2Model::Sai2Model(robot_file, false);
 	robot->_q = redis_client.getEigenMatrixJSON(JOINT_ANGLES_KEY);
-	VectorXd initial_q = robot->_q;
-	robot->updateModel();
+	// VectorXd initial_q = robot->_q;
+	// robot->updateModel();
 
 	// load force sensor
 	Eigen::Vector3d sensed_force;
@@ -123,14 +123,17 @@ int main() {
 
 			positions(i, 0) = x;
 			positions(i, 1) = y;
-			positions(i, 2) = NORTH;
+			positions(i, 2) = WEST;
 			positions(i, 3) = 0;
 			i++;
 		}
 		pathfile.close();
 	}
-	cout << "positions = " << positions << "\n";
-	cout << "positions.row(0) = " << positions.row(0) << "\n";
+	robot->_q = positions.row(0);
+	VectorXd initial_q = robot->_q;
+	robot->updateModel();
+	// cout << "positions = " << positions << "\n";
+	// cout << "positions.row(0) = " << positions.row(0) << "\n";
 
 
 	// controller desired positions
@@ -151,9 +154,10 @@ int main() {
 
 	// controller gains
 	VectorXd joint_task_torques = VectorXd::Zero(dof);
-	joint_task->_kp = 250.0;
-	joint_task->_kv = 50.0; //15.0;
+	joint_task->_kp = 100.0; //250.0;
+	joint_task->_kv = 20.0; //15.0;
 	joint_task->setDynamicDecouplingFull();
+	joint_task->_desired_position = positions.row(0);
 
 	// controller desired angles
 	VectorXd q_des = VectorXd::Zero(dof);

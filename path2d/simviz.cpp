@@ -103,7 +103,10 @@ int main() {
 
 	// load robots
 	auto robot = new Sai2Model::Sai2Model(robot_file, false);
-	//robot->_q(0) = -0.8;
+	robot->_q(0) = 0.0;
+	robot->_q(1) = 0.0;
+	robot->_q(2) = 0.0;
+	robot->_q(3) = 0.0;
 	robot->updateModel();
 
 	// Initialize sphere
