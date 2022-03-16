@@ -107,24 +107,8 @@ int main() {
 	VectorXd command_torques = VectorXd::Zero(dof);
 	MatrixXd N_prec = MatrixXd::Identity(dof, dof);
 
-	// Set up positions for each task
-	// MatrixXd positions(14, 4);
-	// positions << 1.8, 2.4, NORTH, 0.0, // pos1a - down - vert
-	// 						 0.0, 2.4, NORTH, 0.0, // pos1b - up
-	// 						 0.0, 3.7, WEST, 0.0, // pos2a - down - horiz
-	// 						 0.0, 2.4, WEST, 0.0, // pos2b - up
-	// 						 -5.7, 2.4, SOUTH, 0.0, // pos3a - down - vert
-	// 						 0.0, 2.4, SOUTH, 0.0, // pos3b - up
-	// 						 0.0, 2.35, WEST, 0.0, // pos4a - down - horiz
-	// 						 0.0, -2.4, WEST, 0.0, // pos4b - up
-	// 						 1.8, -2.4, NORTH, 0.0, // pos5a - vert
-	// 						 0.0,-2.4, NORTH, 0.0, // pos5b
-	// 						 0.0, -3.7, EAST, 0.0, // pos6a - horiz
-	// 						 0.0, -2.4, EAST, 0.0, // pos6b
-	// 						 -5.7, -2.4, SOUTH, 0.0, // pos7a - vert
-	// 						 0.0, -2.4, SOUTH, 0.0; // pos7b
-
-	uint32_t num_pos = 479;
+	// Read positions from path file
+	uint32_t num_pos = 500;
 	MatrixXd positions(num_pos, 4);
 	fstream pathfile;
 	pathfile.open("/Users/ruta/stanford/cs225a/sai/core/sai2-planning/pytest/rrt_path.txt");
@@ -145,37 +129,12 @@ int main() {
 		}
 		pathfile.close();
 	}
-
-
 	cout << "positions = " << positions << "\n";
 	cout << "positions.row(0) = " << positions.row(0) << "\n";
-	// VectorXd pos1a = VectorXd::Zero(dof);
-	// VectorXd pos1b = VectorXd::Zero(dof);
-	// pos1a << 1.5, 1.5, 0.0, 0.0;
-	// pos1b << 1.5, 1.0, 0.0, 0.0;
 
-	/*** SET UP POSORI TASK***/
-	const string control_link = "linkTool";
-	const Vector3d control_point = Vector3d(0,0.104,0.203);
-	auto posori_task = new Sai2Primitives::PosOriTask(robot, control_link, control_point);
-
-	#ifdef USING_OTG
-		posori_task->_use_interpolation_flag = true; //maybe on false
-	#else
-		posori_task->_use_velocity_saturation_flag = true;
-	#endif
-
-	posori_task->_linear_saturation_velocity = 0.05; // set new slower velocity (to help visualize)
-
-	// controller gains
-	VectorXd posori_task_torques = VectorXd::Zero(dof);
-	posori_task->_kp_pos = 200.0; // 200.0
-	posori_task->_kv_pos = 20.0; // 20.0
-	posori_task->_kp_ori = 200.0;
-	posori_task->_kv_ori = 20.0;
 
 	// controller desired positions
-	double tolerance = 0.001;
+	double tolerance = 0.01;
 	Vector3d x_des = Vector3d::Zero(3);
 	MatrixXd ori_des = Matrix3d::Zero();
 
@@ -187,13 +146,13 @@ int main() {
 	#else
 		joint_task->_use_velocity_saturation_flag = true;
 	#endif
-  	joint_task->_saturation_velocity << M_PI/12, M_PI/12, M_PI/12; //M_PI/6, M_PI/6, M_PI/6; // set new slower velocity (to help visualize)
+  	joint_task->_saturation_velocity << M_PI/3, M_PI/3, M_PI/3; //M_PI/12, M_PI/12, M_PI/12; // set new slower velocity (to help visualize)
 
 
 	// controller gains
 	VectorXd joint_task_torques = VectorXd::Zero(dof);
 	joint_task->_kp = 250.0;
-	joint_task->_kv = 15.0;
+	joint_task->_kv = 50.0; //15.0;
 	joint_task->setDynamicDecouplingFull();
 
 	// controller desired angles
@@ -226,109 +185,21 @@ int main() {
 		// update model
 		robot->updateModel();
 
-		// Every 100 cycles, print the angles and current state
-		// if(controller_counter % 1000 == 0) // %1000
-		// {
-		// 	cout << "current state: " << state << "\n";
-		// 	cout << "current position:" << posori_task->_current_position(0) << " " << posori_task->_current_position(1) << " " << posori_task->_current_position(2) << endl;
-		// 	cout << "base joint angles:" << robot->_q(0) << " " << robot->_q(1) << " " << robot->_q(2) << " " << robot->_q(3) << endl;
-		// 	cout << "arm joint angles:" << robot->_q(4) << " " << endl;
-		// 	cout << "current speed:" << posori_task->_current_velocity(0) << " " << posori_task->_current_velocity(1) << " " << posori_task->_current_velocity(2) << endl;
-		// 	cout << endl;
-		// 	cout << "counter: " << controller_counter << "\n";
-		// }
-
-		// Update position of sphere
-		// nozzle_pos_vec = Vector3d(robot->_q(0)-initial_q(0), robot->_q(1)-initial_q(1), robot->_q(3));
-		// if (nozzle_pos == 1) {
-		// 	// std::cout << "Nozzle is down" << std::endl;
-		// 	Vector3d newNozzlePos = Vector3d(nozzle_pos_vec(0), nozzle_pos_vec(1), -6);
-		// 	nozzle_pos_vec << newNozzlePos;
-		// }
-		// std::cout << "nozzle_pos_vec = " << nozzle_pos_vec << std::endl;
-		// redis_client.setEigenMatrixJSON(NOZZLE_POS_KEY, nozzle_pos_vec);
-
-		// Use sensed force to switch controllers
-		// sensed_force = redis_client.getEigenMatrixJSON(EE_FORCE_KEY);
-
-		// Transform sensed_force to the flap contact point
-		// MatrixXd contact_translation(3, 1);
-		// contact_translation << 0.005,
-		// 										 0,
-		// 										 -0,075;
-		// sensed_force = sensed_force + contact_translation;
-		//
-		// sensed_moment = redis_client.getEigenMatrixJSON(EE_FORCE_KEY);
-		// // Write force and moment to files
-		// if (controller_counter % 5 == 0) {
-		// 	force_outputs << sensed_force << "\n\n";
-		// 	moment_outputs << robot->_q << "\n\n";
-		// }
-
-
-		// cout << abs(sensed_force(2)) << "\n";
-		// if (abs(sensed_force(0)) > 0.0 || abs(sensed_force(1)) > 0.0 || abs(sensed_force(2)) > 0.0) {
-		// 	cout << "sensed force = " << sensed_force << "\n";
-		// }
-
 		if (state == INITIAL_POS) {
-			// joint_task->reInitializeTask();
-			// q_des << pos1a;
 			VectorXd newPos = positions.row(pc);
 			q_des << newPos;
 			cout << "qdes = " << q_des << "\n";
-			// cout << "sensed force = " << sensed_force << "\n";
 			state = MOVING;
 		}
 
 		else if (state == MOVING) {
 			// cout << "Made it to moving state\n";
 			if((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
-				// cout << "Made it to pos1a\n";
-				// joint_task->reInitializeTask();
 				pc++;
 				state = POSITION_HOLD;
-
 				cout << "Reached position: " << q_des << "\n";
-				// cout << "Nozzle is: " << nozzle_pos << "\n";
-
-				// After reaching goal, switch nozzle position
-				// if (nozzle_pos == 1) { // if it is down
-				// 	// Set to nozzle up
-				// 	q_des(3) = 0.0;
-				// 	state = NOZZLE_UP;
-				// 	nozzle_pos = 0;
-				// } else { // if it is up
-				// 	// set to nozzle down
-				// 	q_des(3) = -0.1;
-				// 	state = NOZZLE_DOWN;
-				// 	nozzle_pos = 1;
-				// }
 			}
 		}
-
-		// else if (state == NOZZLE_DOWN) {
-		// 	// When the nozzle is all the way down, go to POSITION_HOLD
-		// 	if (nozzle_pos == 1 && (abs(sensed_force(2)) > 0.005)) {
-		// 		joint_task->reInitializeTask();
-		// 		pc++;
-		// 		state = POSITION_HOLD;
-		// 	}
-		// 	// if((robot->_q - q_des).norm() < tolerance && nozzle_pos == 1){
-		// 	// 	joint_task->reInitializeTask();
-		// 	// 	pc++;
-		// 	// 	state = POSITION_HOLD;
-		// 	// }
-		// }
-		//
-		// else if (state == NOZZLE_UP) {
-		// 	// When the nozzle is all the way up, go to POSITION_HOLD
-		// 	if((robot->_q - q_des).norm() < tolerance && nozzle_pos == 0){
-		// 		joint_task->reInitializeTask();
-		// 		pc++;
-		// 		state = POSITION_HOLD;
-		// 	}
-		// }
 
 		else if (state == POSITION_HOLD) {
 			// cout << "Made it to position hold\n";
@@ -336,25 +207,18 @@ int main() {
 				// joint_task->reInitializeTask();
 				VectorXd newPos = positions.row(pc);
 				q_des << newPos;
-				// Maintain nozzle position when moving again
-				// if (nozzle_pos == 1) {
-				// 	q_des(3) = -0.02;
-				// } else {
-				// 	q_des(3) = 0.0;
-				// }
 				cout << "qdes = " << q_des << "\n";
 				state = MOVING;
 			}
 		}
 
-		if (state == MOVING) { // || state == NOZZLE_DOWN || state == NOZZLE_UP) {
+		if (state == MOVING) {
 			/* Primary Joint Task Control */
 			/* Invoked when we want the base to move and the nozzle to maintain position. */
-			/* RUTA: consider making POURING task posori instead of joint for better accuracy. */
 			joint_task->_desired_position = q_des;
 
 			// update task model and set hierarchy
-			N_prec.setIdentity();
+			// N_prec.setIdentity();
 			joint_task->updateTaskModel(N_prec);
 
 			// compute torques
@@ -367,7 +231,7 @@ int main() {
 			joint_task->_desired_position = robot->_q;
 
 			// update task model and set hierarchy
-			N_prec.setIdentity();
+			// N_prec.setIdentity();
 			joint_task->updateTaskModel(N_prec);
 
 			// compute torques
@@ -375,20 +239,9 @@ int main() {
 
 			command_torques = joint_task_torques;
 		}
-		// else if (state == NOZZLE_DOWN || state == NOZZLE_UP) {
-		// 	/* Primary POSORI Control */
-		// 	cout << "posori control\n";
-		// }
 
 		// send to redis
 		redis_client.setEigenMatrixJSON(JOINT_TORQUES_COMMANDED_KEY, command_torques);
-
-		// Update sphere position
-		// if (nozzle_pos == 1 && state == MOVING) {
-		// 	redis_client.set(ACTIVE_STATE_KEY, "POURING");
-		// } else {
-		// 	redis_client.set(ACTIVE_STATE_KEY, "MOVING");
-		// }
 
 		controller_counter++;
 	}
